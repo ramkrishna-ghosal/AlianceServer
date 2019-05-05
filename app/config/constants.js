@@ -12,9 +12,10 @@ module.exports = {
         }
     },
     uploads: {
-        TempSemesterResultFolder: global.appPath + '/uploads/TempSemsterResult',
-        TempSemesterFeesFolder: global.appPath + '/uploads/TempSemesterFeesFolder',
-        TempAdminProfileFolder: global.appPath + '/uploads/TempAdminProfileFolder'
+        SemesterResultFolder: process.cwd() + '/uploads/semester/marks',
+        SemesterFeesFolder: process.cwd() + '/uploads/semester/fees',
+        AdminProfileFolder: process.cwd() + '/uploads/profile/admins',
+        StudentProfileFolder: process.cwd() + '/uploads/profile/students'
     },
     encryption: {
         key: process.env.encryptionKey,

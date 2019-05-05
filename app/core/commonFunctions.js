@@ -1,7 +1,10 @@
 const Models = require('../db/models/Relational/index'),
+    constants = require('../config/constants'),
     bcrypt = require('bcrypt'),
     way2sms = require('way2sms'),
     _ = require('lodash'),
+    express = require('express'),
+    mkdirp = require('mkdirp'),
     saltRounds = 10;
 
 
@@ -14,15 +17,23 @@ commonFunction.createTable = async () => {
      * Model Sync
      */
     try {
-        await Models.AdminSchema.sync({ force: false });
-        await Models.StudentSchema.sync({ force: false });
-        await Models.smsAPITokenSchema.sync({ force: false });
-        await Models.collegeSchema.sync({ force: false });
-        await Models.facebookSocialSchema.sync({ force: false });
-        await Models.otpSchema.sync({ force: false })
+        for (let model in Models) {
+            await Models[model].sync({ force: false })
+        }
     } catch (e) {
         console.error(`error:${e}`)
         return;
+    }
+}
+
+
+commonFunction.createStaticFolder = (app) => {
+    for (let folder in constants.uploads) {
+        mkdirp(constants.uploads[folder], (err) => {
+            if (!err) {
+                app.use(express.static(folder));
+            }
+        })
     }
 }
 
@@ -63,30 +74,21 @@ commonFunction.checkPassword = (password, hash) => {
 }
 
 commonFunction.generateSMSAPIToken = async () => {
+
     try {
-        let cokkie = await way2sms.reLogin(process.env.mobileNo, process.env.mobilepassword);
         let issuer = 'AlienceHoodServer-' + process.env.GIT_BRANCH + '-' + (process.env.NODE_ENV == 'development' ? 'DEV' : 'PROD') + '@' + require('os').hostname()
         let findSMSCokkie = await Models.smsAPITokenSchema.findOne({ where: { issuer: issuer } });
-
         if (_.isEmpty(findSMSCokkie) || _.isNil(findSMSCokkie)) {
+            let cokkie = await way2sms.login(process.env.mobileNo, process.env.mobilepassword);
             let createCokkie = Models.smsAPITokenSchema.create({
                 issuer: issuer,
                 cokkie: cokkie
             })
-            console.log('SMS API Token generated');
-        } else {
-            let updateCokkie = Models.smsAPITokenSchema.update({
-                cokkie: cokkie
-            }, {
-                    where: {
-                        issuer: issuer
-                    }
-                })
-            console.log('SMS API Token Updated');
+            console.log('Way2SMS API Key generated')
         }
     } catch (e) {
-        console.log('Exception', e)
-        process.exit(0);
+        console.log('exception', e);
+        process.exit(0)
     }
 
 }
@@ -112,6 +114,15 @@ commonFunction.sendMobileOtp = async (phoneno, message) => {
         console.log('e', e);
         return false
     }
+}
+
+commonFunction.generateOTP = () => {
+    var digits = '0123456789';
+    let OTP = '';
+    for (let i = 0; i < 6; i++) {
+        OTP += digits[Math.floor(Math.random() * 10)];
+    }
+    return OTP;
 }
 
 

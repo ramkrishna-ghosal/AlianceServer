@@ -17,7 +17,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(function (req, res, next) {
@@ -32,7 +32,8 @@ require('./app/routes/routes/v1/routes')(app); // Define the routes path for the
 require('./app/db/index');
 
 commonFunction.createTable();
-//commonFunction.generateSMSAPIToken();
+commonFunction.createStaticFolder(app);
+commonFunction.generateSMSAPIToken();
 
 //app.use(cors())
 

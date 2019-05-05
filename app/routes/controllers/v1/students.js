@@ -11,6 +11,6 @@ const router = require('express').Router(),
 
 router.post('/student-login', UserControllers.StudentLogin);
 router.post('/forgotPassword', UserControllers.forgotPassword)
-router.post('/fetch-student-data', middlewares.verifyStudentToken, UserControllers.fetchStudentData)
-
+router.get('/fetch-student-data', middlewares.verifyStudentToken, UserControllers.fetchStudentData)
+router.post('/get-students-data/:studentsID', middlewares.verifyAdminToken, UserControllers.getStudentsData)
 module.exports = router

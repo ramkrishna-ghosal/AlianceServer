@@ -10,7 +10,7 @@ module.exports = sequelize.define(
             allowNull: false
         },
         College_Name: {
-            type: Sequalize.STRING(50).BINARY,
+            type: Sequalize.TEXT,
             allowNull: false
         },
         College_state: {

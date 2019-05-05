@@ -46,9 +46,14 @@ UserControllers.StudentLogin = async (req, res, next) => {
                 College_ID: CollegeID,
                 RegistrationID: req.body.registrationID
             },
+            include: [{
+                model: Models.StudentTechnicalSchema,
+                attributes: ['StudentName', 'CompanyName', 'CompanyAddress', 'Designation', 'Skills']
+            }],
             // attributes: ['College_ID', 'RegistrationID', 'StudentPassword'],
-            raw: true
         })
+
+        Student = Student.get({ plain: true })
 
         if (_.isEmpty(Student)) {
             return res.send({
@@ -62,7 +67,7 @@ UserControllers.StudentLogin = async (req, res, next) => {
         if (isChecked) {
             let token = await auth.createAuthToken({ ...{ CollgeID: Student.College_ID, RegistrationID: Student.RegistrationID } });
 
-            Student = _.omit(Student, ['StudentPassword', 'College_ID', 'RegistrationID']);
+            Student = _.omit(Student, ['StudentPassword', 'College_ID', 'RegistrationID', 'dob']);
             Student.authToken = token;
             return res.send({
                 responseCode: 200,
@@ -138,6 +143,46 @@ UserControllers.fetchStudentData = async (req, res, next) => {
             responseCode: 200,
             responseData: req.userdetails,
             responseText: 'Fetch Students data'
+        })
+    }
+}
+
+UserControllers.getStudentsData = async (req, res, next) => {
+
+    let collegeID = req.userdetails.collegeID
+    let studentsId = req.params.studentsID || null
+
+    let where;
+
+    if (_.isNil(studentsId)) {
+        where = {
+            where: {
+                RegistrationID: studentsId,
+                collegeID: collegeID
+            }
+            , include: [
+                {
+                    model: Models.StudentTechnicalSchema
+                }
+            ]
+        }
+    }
+
+
+    try {
+        let result = await Models.StudentSchema.findAndCountAll(where)
+
+        return res.send({
+            responseCode: 200,
+            responseData: result,
+            responseText: 'Students All data'
+        })
+
+    } catch (e) {
+        return res.send({
+            responseCode: 500,
+            responseData: [],
+            responseText: 'Internal error occured'
         })
     }
 }

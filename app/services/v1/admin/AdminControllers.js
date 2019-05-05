@@ -127,40 +127,40 @@ AdminControllers.AddAdmin = async (req, res, next) => {
 }
 
 AdminControllers.AdminLogin = async (req, res, next) => {
-    if (_.isNil(req.body.College_Name)) {
+    if (_.isNil(req.body.collegeName)) {
         return res.send({
             responseCode: 404,
             responseText: 'College Name is required'
         })
     }
 
-    if (_.isNil(req.body.College_state)) {
+    if (_.isNil(req.body.stateName)) {
         return res.send({
             responseCode: 404,
             responseText: 'College State is required'
         })
     }
 
-    if (_.isNil(req.body.AdminName)) {
+    if (_.isNil(req.body.AdminID)) {
         return res.send({
             responseCode: 404,
-            responseText: 'Admin Name is required'
+            responseText: 'Admin user name is required'
         })
     }
 
-    if (_.isNil(req.body.adminPassword)) {
+    if (_.isNil(req.body.password)) {
         return res.send({
             responseCode: 404,
             responseText: 'Admin Password is required'
         })
     }
 
-    let College_ID = await commonFunction.createCollegeID(req.body.College_Name, req.body.College_state)
+    let College_ID = await commonFunction.createCollegeID(req.body.collegeName, req.body.stateName)
     try {
         let Admin = await Models.AdminSchema.findOne({
             where: {
                 College_ID: College_ID,
-                AdminName: req.body.AdminName
+                username: req.body.AdminID
             },
             raw: true
         })
@@ -173,14 +173,14 @@ AdminControllers.AdminLogin = async (req, res, next) => {
         }
 
 
-        let isChecked = await commonFunction.checkPassword(req.body.adminPassword, Admin.adminPassword);
 
-        console.log('isChecked', isChecked)
+        let isChecked = await commonFunction.checkPassword(req.body.password, Admin.adminPassword);
+
 
         if (isChecked) {
-            let dataToEncrypt = { ...{ College_ID: Admin.College_ID, AdminName: Admin.AdminName } }
+            let dataToEncrypt = { ...{ College_ID: Admin.College_ID, AdminName: Admin.username } }
             Admin = _.omit(Admin, ['adminPassword', 'AdminEmail', 'College_ID', 'createdAt', 'updatedAt', 'College_Name', 'College_state', 'ProfilePicture']);
-            Admin.token = await auth.createAuthToken(dataToEncrypt);
+            Admin.authToken = await auth.createAuthToken(dataToEncrypt);
             return res.send({
                 responseCode: 200,
                 responseData: Admin,
@@ -306,6 +306,7 @@ AdminControllers.AddStudent = async (req, res, next) => {
         if (!_.isEmpty(student)) {
             let message = `Your registration is successfully done, your password to the portal is ${studentPassword}, please dont share this to anyone`;
             let result = await commonFunction.sendMobileOtp(req.body.phoneno, message);
+            console.log('result', result)
 
             if (result) {
                 return res.send({
@@ -447,6 +448,82 @@ AdminControllers.AdminMobileLogin = async (req, res, next) => {
             responseText: 'Internal error occured'
         })
     }
+}
+
+AdminControllers.forgotPassword = async (req, res, next) => {
+    if (!req.body.AdminID) {
+        return res.send({
+            responseCode: 404,
+            responseText: 'Admin ID is required'
+        })
+    }
+
+    if (!req.body.CollegeName) {
+        return res.send({
+            responseCode: 404,
+            responseText: 'College Name is required'
+        })
+    }
+
+    if (!req.body.CollegeState) {
+        return res.send({
+            responseCode: 404,
+            responseText: 'College State is required'
+        })
+    }
+    let College_ID = await commonFunction.createCollegeID(req.body.CollegeName, req.body.CollegeState)
+
+    try {
+
+        let Admin = Models.AdminSchema.findOne({
+            where: {
+                College_ID: College_ID,
+                username: req.body.AdminID
+            }
+        })
+
+        if (_.isEmpty(Admin)) {
+            return res.send({
+                responseCode: 402,
+                responseText: 'Admin is not exist'
+            })
+        }
+
+        let hashPassword = await commonFunction.createHashPassword(req.body.password)
+
+        let result = Models.AdminSchema.update({
+            adminPassword: hashPassword
+        }, {
+                where: {
+                    College_ID: College_ID,
+                    username: req.body.AdminID
+                }
+            })
+
+        console.log('result', result)
+
+        if (result) {
+            return res.send({
+                responseCode: 200,
+                responseText: 'Password is updated'
+            })
+        }
+    } catch (e) {
+        return res.send({
+            responseCode: 500,
+            responseText: 'Internal error occured'
+        })
+    }
+
+
+}
+
+AdminControllers.fetchAdminData = async (req, res, next) => {
+    return res.send({
+        responseCode: 200,
+        responseData: req.userdetails,
+        responseText: 'Fetch Admin Data'
+    })
 }
 
 module.exports = AdminControllers

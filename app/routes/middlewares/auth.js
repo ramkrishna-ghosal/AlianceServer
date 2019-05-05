@@ -32,22 +32,37 @@ AuthControllers.verifyStudentToken = (req, res, next) => {
         if (error instanceof Error) {
             if (error.name == 'TokenExpiredError') {
                 return res.send({
-                    statusCode: 500,
+                    statusCode: 403,
                     message: 'Token expired'
                 })
             } else {
-                console.log('error', error)
-                return res.send({
-                    statusCode: 500,
-                    message: 'Internal error occured'
-                })
+                if (error.name === 'JsonWebTokenError') {
+                    return res.send({
+                        statusCode: 403,
+                        message: 'Dont ever try to stupid me'
+                    })
+                } else {
+                    return res.send({
+                        statusCode: 500,
+                        message: 'Internal error occured'
+                    })
+                }
             }
         } else {
             Models.StudentSchema.findOne({
                 where: {
                     College_ID: decoded.CollgeID,
                     RegistrationID: decoded.RegistrationID
-                }
+                },
+                include: [
+                    {
+                        model: Models.StudentTechnicalSchema,
+                        where: {
+                            RegistrationID: decoded.RegistrationID
+                        },
+                        attributes: ['StudentName', 'CompanyName', 'CompanyAddress', 'Designation', 'Skills']
+                    }
+                ]
             })
                 .then((user) => {
 
@@ -63,6 +78,7 @@ AuthControllers.verifyStudentToken = (req, res, next) => {
                     }
                 })
                 .catch((error) => {
+                    console.log('error', error)
                     return res.send({
                         statusCode: 500,
                         message: 'Internal error occured'
@@ -90,6 +106,7 @@ AuthControllers.verifyAdminToken = (req, res, next) => {
                     message: 'Token expired'
                 })
             } else {
+                console.log('error', error)
                 return res.send({
                     statusCode: 500,
                     message: 'Internal error occured'
@@ -99,11 +116,12 @@ AuthControllers.verifyAdminToken = (req, res, next) => {
             Models.AdminSchema.findOne({
                 where: {
                     College_ID: decoded.College_ID,
-                    RegistrationID: decoded.adminName
+                    username: decoded.AdminName
                 }
             })
                 .then((user) => {
                     user = user.get({ plain: true })
+                    user = _.omit(user, ['College_ID', 'adminPassword', 'createdAt', 'updatedAt'])
                     if (_.isEmpty(user)) {
                         return res.send({
                             statusCode: 401,
@@ -115,6 +133,7 @@ AuthControllers.verifyAdminToken = (req, res, next) => {
                     }
                 })
                 .catch((error) => {
+                    console.log('error', error)
                     return res.send({
                         statusCode: 500,
                         message: 'Internal error occured'
