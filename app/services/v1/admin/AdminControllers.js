@@ -62,23 +62,19 @@ AdminControllers.AddAdmin = async (req, res, next) => {
     try {
         let password = await commonFunction.createHashPassword(req.body.password);
 
-        let findResult = await Models.AdminSchema.findOne(
-            {
-                where: {
-                    [Op.and]: [
-                        {
-                            username: req.body.name
-                        }, {
-                            [Op.or]: [{
-                                AdminEmail: req.body.mail
-                            }, {
-                                AdminMobNo: req.body.mobile
-                            }]
-                        }
-                    ]
-                }
+        let findResult = await Models.AdminSchema.findOne({
+            where: {
+                [Op.and]: [{
+                    username: req.body.name
+                }, {
+                    [Op.or]: [{
+                        AdminEmail: req.body.mail
+                    }, {
+                        AdminMobNo: req.body.mobile
+                    }]
+                }]
             }
-        )
+        })
 
         if (!_.isEmpty(findResult)) {
             return res.send({
@@ -178,7 +174,12 @@ AdminControllers.AdminLogin = async (req, res, next) => {
 
 
         if (isChecked) {
-            let dataToEncrypt = { ...{ College_ID: Admin.College_ID, AdminName: Admin.username } }
+            let dataToEncrypt = {
+                ...{
+                    College_ID: Admin.College_ID,
+                    AdminName: Admin.username
+                }
+            }
             Admin = _.omit(Admin, ['adminPassword', 'AdminEmail', 'College_ID', 'createdAt', 'updatedAt', 'College_Name', 'College_state', 'ProfilePicture']);
             Admin.authToken = await auth.createAuthToken(dataToEncrypt);
             return res.send({
@@ -339,7 +340,11 @@ AdminControllers.AdminSendOtp = async (req, res, next) => {
 
     try {
 
-        let Admin = await Models.AdminSchema.findOne({ where: { AdminMobNo: req.body.MobileNo } })
+        let Admin = await Models.AdminSchema.findOne({
+            where: {
+                AdminMobNo: req.body.MobileNo
+            }
+        })
 
         if (_.isEmpty(Admin)) {
             return res.send({
@@ -494,11 +499,11 @@ AdminControllers.forgotPassword = async (req, res, next) => {
         let result = Models.AdminSchema.update({
             adminPassword: hashPassword
         }, {
-                where: {
-                    College_ID: College_ID,
-                    username: req.body.AdminID
-                }
-            })
+            where: {
+                College_ID: College_ID,
+                username: req.body.AdminID
+            }
+        })
 
         console.log('result', result)
 
@@ -519,11 +524,47 @@ AdminControllers.forgotPassword = async (req, res, next) => {
 }
 
 AdminControllers.fetchAdminData = async (req, res, next) => {
-    return res.send({
-        responseCode: 200,
-        responseData: req.userdetails,
-        responseText: 'Fetch Admin Data'
-    })
+
+    try {
+        let result=await Models.AdminSchema.findOne({
+            where: {
+                College_ID: req.userdetails.College_ID,
+                username: req.userdetails.username
+            },
+            include: [{
+                model: Models.AdminsInfoSchema,
+                where:{
+                    College_ID:req.userdetails.College_ID
+                },
+                attributes:['Admin_address','Admin_designation'],
+                required:false
+            },{
+                model:Models.StudentSchema,
+                required:false,
+                include:[{
+                    model:Models.StudentTechnicalSchema,
+                    attributes:['CompanyName','Designation','Skills']
+                }],
+                attributes:['RegistrationID','StudentName','StudentEmail','phoneno','StudentGender','dob']
+            }],
+            attributes:['AdminEmail','AdminMobNo','College_Name','College_state','ProfilePicture']
+        })
+
+        return res.send({
+            responseCode:200,
+            responseData:result,
+            responseText:'Fetch Admin Data'
+        })
+
+
+    } catch (e) {
+        console.log('e',e)
+        return res.send({
+            responseCode:500,
+            responseData:[],
+            responseText:'Internal error occured'
+        })
+    }
 }
 
 module.exports = AdminControllers

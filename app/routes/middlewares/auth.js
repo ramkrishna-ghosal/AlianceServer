@@ -102,7 +102,7 @@ AuthControllers.verifyAdminToken = (req, res, next) => {
         if (error instanceof Error) {
             if (error.name == 'TokenExpiredError') {
                 return res.send({
-                    statusCode: 500,
+                    statusCode: 403,
                     message: 'Token expired'
                 })
             } else {
@@ -121,7 +121,7 @@ AuthControllers.verifyAdminToken = (req, res, next) => {
             })
                 .then((user) => {
                     user = user.get({ plain: true })
-                    user = _.omit(user, ['College_ID', 'adminPassword', 'createdAt', 'updatedAt'])
+                    user = _.omit(user, ['adminPassword', 'createdAt', 'updatedAt'])
                     if (_.isEmpty(user)) {
                         return res.send({
                             statusCode: 401,

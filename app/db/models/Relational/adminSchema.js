@@ -6,11 +6,10 @@ module.exports = sequelize.define(
     {
         College_ID: {
             type: Sequalize.STRING(100).BINARY,
-            primaryKey: true,
             allowNull: false
         },
         College_Name: {
-            type: Sequalize.STRING(50).BINARY,
+            type: Sequalize.TEXT,
             allowNull: false
         },
         College_state: {
@@ -27,6 +26,7 @@ module.exports = sequelize.define(
         },
         username: {
             type: Sequalize.STRING(50).BINARY,
+            primaryKey: true,
             allowNull: false
         },
         adminPassword: {

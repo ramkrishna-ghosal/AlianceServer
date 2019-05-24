@@ -30,10 +30,14 @@ app.use(function (req, res, next) {
 require('./app/routes/routes/v1/routes')(app); // Define the routes path for the application
 
 require('./app/db/index');
+setTimeout(()=>{
+  commonFunction.generateSMSAPIToken();
+},3000)
 
 commonFunction.createTable();
+
 commonFunction.createStaticFolder(app);
-commonFunction.generateSMSAPIToken();
+
 
 //app.use(cors())
 
